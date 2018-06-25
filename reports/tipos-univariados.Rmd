@@ -14,6 +14,7 @@ library(plotly)
 library(ggdendro)
 
 source(here::here("code/lib.R"))
+source(here::here("reports/plota_solucoes_hclust.R"))
 theme_set(theme_report())
 
 knitr::opts_chunk$set(tidy = FALSE,
@@ -31,7 +32,7 @@ paleta = c("#404E4D",
 ```{r}
 ## ANTES DE USAR
 # Para criar data/movies.csv
-# import_data("tom_cruise") ou com o ator/atriz que você escolher
+import_data("tom_cruise")
 ```
 
 
@@ -55,6 +56,12 @@ filmes %>%
     geom_histogram(binwidth = 15, fill = paleta[2], color = "black") + 
     geom_rug(size = .5) 
 ```
+```{r}
+filmes %>% 
+    ggplot(aes(x = bilheteria)) + 
+    geom_histogram(bins = 20, fill = paleta[3], color = "black") + 
+    scale_x_log10()
+```
 
 ```{r}
 filmes %>% 
@@ -72,6 +79,35 @@ p = filmes %>%
     labs(x = "")
 
 ggplotly(p)
+```
+
+# Duas dimensoes
+```{r}
+p = filmes %>% 
+    ggplot(aes(x = avaliacao, 
+               y = bilheteria, 
+               label = ano)) + 
+    geom_point() 
+p
+ggplotly(p)
+
+agrupamento_h_2d = filmes %>% 
+    mutate(bilheteria = log10(bilheteria)) %>%
+    as.data.frame() %>% 
+    column_to_rownames("filme") %>%
+    select(avaliacao, `bilheteria`) %>%
+    dist(method = "euclidean") %>% 
+    hclust(method = "centroid")
+
+ggdendrogram(agrupamento_h_2d, rotate = TRUE)
+
+data.frame(height = agrupamento_h_2d$height) %>% 
+    mutate(k = 1:n()) %>% 
+    ggplot(aes(x = k, y = height)) + 
+    geom_line(colour = "grey") + 
+    geom_point() + 
+    labs(x = "Número de clusters produzido", y = "Dissimilaridade na junção")
+
 ```
 
 ## Agrupamento hierárquico
